@@ -8,70 +8,22 @@ import MemberDashboard from "./pages/MemberDashboard";
 import ActivityDetailPage from "./pages/ActivityDetailPage";
 import type { Membre, Activite } from "./types";
 
-// --- Données mock ---
-const MOCK_MEMBERS: Membre[] = [
-  {
-    id: 1,
-    nom: "Jean Dupont",
-    email: "j.dupont@lipn.fr",
-    role: "Membre",
-    labo: "AOD",
-    charge: 65,
-  },
-  {
-    id: 2,
-    nom: "Marie Curie",
-    email: "m.curie@lipn.fr",
-    role: "Administrateur",
-    labo: "CALIN",
-    charge: 30,
-  },
-  {
-    id: 3,
-    nom: "Pierre Rossi",
-    email: "p.rossi@lipn.fr",
-    role: "Membre",
-    labo: "LRC",
-    charge: 85,
-  },
+const INITIAL_MEMBERS: Membre[] = [
+  { id: "1", nom: "Jean Dupont", email: "j.dupont@lipn.fr", role: "Membre" },
+  { id: "2", nom: "Marie Curie", email: "m.curie@lipn.fr", role: "Administrateur" },
+  { id: "3", nom: "Pierre Rossi", email: "p.rossi@lipn.fr", role: "Membre" },
 ];
 
 const MOCK_ACTIVITIES: Activite[] = [
-  {
-    id: 1,
-    type: "CSI",
-    description: "CSI de Alice Martin (1ère année)",
-    dateCreation: "2024-04-01",
-    dateEcheance: "2024-06-15",
-    statut: "En cours",
-    assigne: "Jean Dupont",
-    doctorant: "Alice Martin",
-  },
-  {
-    id: 2,
-    type: "Rapport",
-    description: "Rapport scientifique annuel 2024",
-    dateCreation: "2024-04-10",
-    dateEcheance: "2024-07-01",
-    statut: "À faire",
-    assigne: "Non affecté",
-    doctorant: "N/A",
-  },
-  {
-    id: 3,
-    type: "Audition",
-    description: "Audition mi-parcours Kevin Durand",
-    dateCreation: "2024-03-20",
-    dateEcheance: "2024-05-20",
-    statut: "Terminé",
-    assigne: "Pierre Rossi",
-    doctorant: "Kevin Durand",
-  },
+  { id: 1, type: "CSI", description: "CSI de Alice Martin", dateCreation: "2024-04-01", dateEcheance: "2024-06-15", statut: "En cours", assigne: "Jean Dupont", doctorant: "Alice Martin" },
 ];
 
 export default function App() {
   const [page, setPage] = useState("login");
   const [role, setRole] = useState<"admin" | "member" | null>(null);
+  
+  // État pour gérer la liste des membres dynamiquement
+  const [members, setMembers] = useState<Membre[]>(INITIAL_MEMBERS);
 
   const handleLogin = (selectedRole: "admin" | "member") => {
     setRole(selectedRole);
@@ -83,24 +35,29 @@ export default function App() {
     setPage("login");
   };
 
-  if (page === "login") {
-    return <LoginPage onLogin={handleLogin} />;
-  }
+  // Logique pour ajouter un membre
+  const handleAddMember = (newMemberData: Omit<Membre, "id">) => {
+    const newMember: Membre = {
+      ...newMemberData,
+      id: Math.random().toString(36).substr(2, 9), 
+    };
+    setMembers([...members, newMember]);
+  };
+
+  if (page === "login") return <LoginPage onLogin={handleLogin} />;
 
   return (
-    <Layout
-      role={role}
-      currentPage={page}
-      navigate={setPage}
-      onLogout={handleLogout}
-    >
-      {page === "admin-dash" && <AdminDashboard members={MOCK_MEMBERS} />}
+    <Layout role={role} currentPage={page} navigate={setPage} onLogout={handleLogout}>
+      {page === "admin-dash" && <AdminDashboard members={members} />}
 
-      {page === "admin-members" && <AdminMembers members={MOCK_MEMBERS} />}
-
-      {page === "admin-activities" && (
-        <AdminActivities activities={MOCK_ACTIVITIES} />
+      {page === "admin-members" && (
+        <AdminMembers 
+          members={members} 
+          onAddMember={handleAddMember} 
+        />
       )}
+
+      {page === "admin-activities" && <AdminActivities activities={MOCK_ACTIVITIES} />}
 
       {page === "member-dash" && (
         <MemberDashboard
