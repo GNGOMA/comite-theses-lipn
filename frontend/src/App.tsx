@@ -43,6 +43,12 @@ export default function App() {
     };
     setMembers([...members, newMember]);
   };
+  // Logique pour supprimer un membre
+  const handleDeleteMember = (id: string) => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce membre ?")) {
+      setMembers(members.filter((m) => m.id !== id));
+    }
+  };
 
   if (page === "login") return <LoginPage onLogin={handleLogin} />;
 
@@ -53,7 +59,8 @@ export default function App() {
       {page === "admin-members" && (
         <AdminMembers 
           members={members} 
-          onAddMember={handleAddMember} 
+          onAddMember={handleAddMember}
+          onDeleteMember={handleDeleteMember} // <-- Nouvelle prop 
         />
       )}
 

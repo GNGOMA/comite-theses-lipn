@@ -5,9 +5,10 @@ import type { Membre } from "../types";
 interface Props {
   members: Membre[];
   onAddMember: (newMember: Omit<Membre, "id">) => void;
+  onDeleteMember: (id: string) => void; // <-- Ajout ici
 }
 
-export default function AdminMembers({ members, onAddMember }: Props) {
+export default function AdminMembers({ members, onAddMember, onDeleteMember }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ nom: "", email: "", role: "Membre" });
 
@@ -58,8 +59,11 @@ export default function AdminMembers({ members, onAddMember }: Props) {
               </td>
               <td className="px-6 py-4 text-right">
                 <button className="p-2 text-slate-400 hover:text-indigo-600"><Edit size={18} /></button>
-                <button className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={18} /></button>
-              </td>
+              <button 
+                onClick={() => onDeleteMember(membre.id)}
+                className="p-2 text-slate-400 hover:text-red-500 transition-colors">
+                <Trash2 size={18} />
+              </button>              </td>
             </tr>
           ))}
         </tbody>
