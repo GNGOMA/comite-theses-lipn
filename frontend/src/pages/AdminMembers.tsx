@@ -1,20 +1,33 @@
-import React from "react";
-import { UserPlus, Edit, Trash2 } from "lucide-react";
+import React, { useState } from "react";
+import { UserPlus, Edit, Trash2, X } from "lucide-react";
 import type { Membre } from "../types";
 
 interface Props {
   members: Membre[];
+  onAddMember: (newMember: Omit<Membre, "id">) => void;
 }
 
-export default function AdminMembers({ members }: Props) {
+export default function AdminMembers({ members, onAddMember }: Props) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({ nom: "", email: "", role: "Membre" });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onAddMember(formData);
+    setIsModalOpen(false);
+    setFormData({ nom: "", email: "", role: "Membre" }); // Réinitialisation
+  };
+
   return (
     <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
       
       {/* Header */}
       <div className="p-6 border-b border-slate-50 flex justify-between items-center">
         <h3 className="text-xl font-bold">Liste des membres</h3>
-
-        <button className="bg-indigo-600 text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition-colors">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="bg-indigo-600 text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition-colors"
+        >
           <UserPlus size={18} />
           Nouveau membre
         </button>
@@ -24,58 +37,89 @@ export default function AdminMembers({ members }: Props) {
       <table className="w-full text-left">
         <thead className="bg-slate-50/50">
           <tr>
-            <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase">
-              Nom
-            </th>
-            <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase">
-              Rôle
-            </th>
-            <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase text-right">
-              Actions
-            </th>
+            <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase">Nom</th>
+            <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase">Rôle</th>
+            <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase text-right">Actions</th>
           </tr>
         </thead>
-
         <tbody className="divide-y divide-slate-50">
           {members.map((membre) => (
-            <tr
-              key={membre.id}
-              className="hover:bg-slate-50/50 transition-colors"
-            >
+            <tr key={membre.id} className="hover:bg-slate-50/50 transition-colors">
               <td className="px-6 py-4">
-                <div className="font-bold text-slate-800">
-                  {membre.nom}
-                </div>
-                <div className="text-xs text-slate-400">
-                  {membre.email}
-                </div>
+                <div className="font-bold text-slate-800">{membre.nom}</div>
+                <div className="text-xs text-slate-400">{membre.email}</div>
               </td>
-
               <td className="px-6 py-4">
-                <span
-                  className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                    membre.role === "Administrateur"
-                      ? "bg-purple-100 text-purple-600"
-                      : "bg-blue-100 text-blue-600"
-                  }`}
-                >
+                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+                  membre.role === "Administrateur" ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-blue-600"
+                }`}>
                   {membre.role}
                 </span>
               </td>
-
               <td className="px-6 py-4 text-right">
-                <button className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
-                  <Edit size={18} />
-                </button>
-
-                <button className="p-2 text-slate-400 hover:text-red-500 transition-colors">
-                  <Trash2 size={18} />
-                </button>
+                <button className="p-2 text-slate-400 hover:text-indigo-600"><Edit size={18} /></button>
+                <button className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={18} /></button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {/* Modale d'ajout */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-50 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-800">Ajouter un membre</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Nom Complet</label>
+                <input 
+                  required
+                  className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  type="text" 
+                  value={formData.nom}
+                  onChange={(e) => setFormData({...formData, nom: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Email</label>
+                <input 
+                  required
+                  className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Rôle</label>
+                <select 
+                  className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  value={formData.role}
+                  onChange={(e) => setFormData({...formData, role: e.target.value})}
+                >
+                  <option value="Membre">Membre</option>
+                  <option value="Administrateur">Administrateur</option>
+                </select>
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-colors">
+                  Annuler
+                </button>
+                <button type="submit" className="flex-1 bg-indigo-600 text-white px-4 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-colors">
+                  Enregistrer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
