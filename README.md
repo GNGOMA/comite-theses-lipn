@@ -1,73 +1,28 @@
-# React + TypeScript + Vite
+# Système de Gestion du Comité des Thèses (LIPN)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Présentation
+]Ce projet consiste en la conception et le développement d'une application web centralisée pour le comité des thèses du laboratoire LIPN. L'objectif est de remplacer le suivi actuel par courriels et documents épars afin d'améliorer la visibilité, la traçabilité et la gestion des responsabilités.
 
-Currently, two official plugins are available:
+## Objectifs du projet
+* Centraliser l'ensemble des informations relatives au fonctionnement du comité.
+* Gérer les membres, les mandats et les activités tout en conservant l'historique des données.
+* Analyser la répartition de la charge de travail entre les membres via des indicateurs de pilotage.
+* Offrir une solution sécurisée et adaptée aux besoins spécifiques du laboratoire.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Étude Fonctionnelle
+Le système distingue deux profils d'utilisateurs principaux :
 
-## React Compiler
+### Administrateur
+* Gestion complète des membres et des mandats.
+* Création et affectation des activités (évaluations de thèses, CSI, auditions annuelles).
+* Accès aux tableaux de bord et aux statistiques globales.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Membre du comité
+* Consultation des activités assignées.
+* Mise à jour de l'état d'avancement des tâches.
+* Dépôt des documents et rapports scientifiques associés.
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Architecture et Données
+Le projet s'appuie sur une architecture API REST avec les interactions suivantes :
+* **Backend** : Gestion des requêtes via une API (ex: POST /activites pour la création, PUT /activites/{id} pour la mise à jour).
+* **Modèle de données** : Structuré autour des entités Membre, Mandat, Activité, CSI et Affectation.
