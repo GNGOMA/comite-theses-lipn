@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Build directories
+__pycache__/
+*.pyc
+node_modules/
+.env
+backend/test.db
+backend/uploads/

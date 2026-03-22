@@ -1,36 +1,53 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Clock } from "lucide-react";
-import type { Activite } from "../types";
+import axios from "axios";
 
-interface Props {
-  activities: Activite[];
-  onSelect: () => void;
+interface Activity {
+  id: number;
+  type: string;
+  description: string;
+  dateCreation: string;
+  dateEcheance: string;
+  statut: string;
 }
 
-export default function MemberDashboard({ activities, onSelect }: Props) {
+interface Props {
+  onSelect: (activity: Activity) => void;
+}
+
+export default function MemberDashboard({ onSelect }: Props) {
+  const [activities, setActivities] = useState<Activity[]>([]);
+
+  useEffect(() => {
+    axios
+      .get("http://127.0.0.1:8000/membres/1/activites")
+      .then((res) => {
+        setActivities(res.data);
+      })
+      .catch((err) => {
+        console.error("Erreur lors du chargement des activités :", err);
+      });
+  }, []);
+
   return (
     <div className="space-y-6">
-      
-      {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-10 rounded-[40px] text-white shadow-2xl shadow-indigo-200">
         <h2 className="text-3xl font-black mb-2">
-          Bonjour, Dr. Jean Dupont
+          Bonjour !
         </h2>
         <p className="text-indigo-100 font-medium">
           Vous avez {activities.length} activités en attente cette semaine.
         </p>
       </div>
 
-      {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {activities.slice(0, 2).map((act) => (
           <div
             key={act.id}
             className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm hover:border-indigo-300 transition-all cursor-pointer group"
-            onClick={onSelect}
+            onClick={() => onSelect(act)}
           >
             <div className="flex justify-between items-start mb-6">
-              
               <span className="bg-cyan-100 text-cyan-600 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest">
                 {act.type}
               </span>

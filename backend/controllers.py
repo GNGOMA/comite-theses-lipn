@@ -7,8 +7,17 @@ from sqlalchemy.orm import Session
 from database import SessionLocal
 from models import Membre, Activite, Affectation
 
+from fastapi import HTTPException
+from pydantic import BaseModel
+
+from fastapi import UploadFile, File
+import os
+import shutil
+
 router = APIRouter()
 
+class StatutUpdate(BaseModel):
+    statut: str
 
 def get_db():
     db = SessionLocal()
@@ -42,7 +51,32 @@ def get_membres(db: Session = Depends(get_db)):
 def get_activites(db: Session = Depends(get_db)):
     return db.query(Activite).all()
 
+#----------------------------------- Routes Membres + Activites-------------------
+@router.get("/membres/{membre_id}/activites")
+def get_activites_by_membre(membre_id: int, db: Session = Depends(get_db)):
+    results = (
+        db.query(Affectation, Activite)
+        .join(Activite, Affectation.activite_id == Activite.id)
+        .filter(Affectation.membre_id == membre_id)
+        .all()
+    )
 
+    data = []
+    for affectation, activite in results:
+        data.append({
+            "affectation_id": affectation.id,
+            "dateAffectation": affectation.dateAffectation,
+            "id": activite.id,
+            "type": activite.type,
+            "description": activite.description,
+            "dateCreation": activite.dateCreation,
+            "dateEcheance": activite.dateEcheance,
+            "statut": activite.statut
+        })
+
+    return data
+
+#-------------------------------
 # =======================
 # Routes Affectations
 # =======================
@@ -154,3 +188,53 @@ def get_member_metrics(db: Session = Depends(get_db)):
         })
 
     return resultats
+
+#-------------------Route pour mettre à jour le statut d'une activité-------------------
+
+@router.put("/activites/{activite_id}/statut")
+def update_statut_activite(activite_id: int, payload: StatutUpdate, db: Session = Depends(get_db)):
+    activite = db.query(Activite).filter(Activite.id == activite_id).first()
+
+    if not activite:
+        raise HTTPException(status_code=404, detail="Activité introuvable")
+
+    activite.statut = payload.statut
+    db.commit()
+    db.refresh(activite)
+
+    return {
+        "message": "Statut mis à jour avec succès",
+        "activite": {
+            "id": activite.id,
+            "type": activite.type,
+            "description": activite.description,
+            "dateCreation": activite.dateCreation,
+            "dateEcheance": activite.dateEcheance,
+            "statut": activite.statut
+        }
+    }
+
+#-------------------Route pour uploader un fichier lié à une activité-------------------
+
+@router.post("/activites/{activite_id}/upload")
+def upload_fichier_activite(activite_id: int, fichier: UploadFile = File(...), db: Session = Depends(get_db)):
+    activite = db.query(Activite).filter(Activite.id == activite_id).first()
+
+    if not activite:
+        raise HTTPException(status_code=404, detail="Activité introuvable")
+
+    upload_dir = "uploads"
+    os.makedirs(upload_dir, exist_ok=True)
+
+    file_path = os.path.join(upload_dir, f"{activite_id}_{fichier.filename}")
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(fichier.file, buffer)
+
+    return {
+        "message": "Fichier uploadé avec succès",
+        "filename": fichier.filename,
+        "path": file_path,
+        "activite_id": activite_id
+    }
+

@@ -5,15 +5,24 @@ import type { Membre } from "../types";
 interface Props {
   members: Membre[];
   onAddMember: (newMember: Omit<Membre, "id">) => void;
-  onDeleteMember: (id: string) => void; // <-- Ajout ici
+  onDeleteMember: (id: number) => void; // <-- Ajout ici
   onEditMember: (member: Membre) => void; // <-- Ajout ici
 }
 
 export default function AdminMembers({ members, onAddMember, onDeleteMember, onEditMember }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Membre | null>(null); // Pour savoir si on édite
-  const [formData, setFormData] = useState({ nom: "", email: "", role: "Membre" });
-
+ const [formData, setFormData] = useState<{
+  nom: string;
+  email: string;
+  role: "Membre" | "Administrateur";
+  charge: number;
+}>({
+  nom: "",
+  email: "",
+  role: "Membre",
+  charge: 0,
+});
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingMember) {
@@ -25,16 +34,26 @@ export default function AdminMembers({ members, onAddMember, onDeleteMember, onE
     }
     closeModal();
   };
-  const openEditModal = (membre: Membre) => {
-    setEditingMember(membre);
-    setFormData({ nom: membre.nom, email: membre.email, role: membre.role });
-    setIsModalOpen(true);
-  };
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setEditingMember(null);
-    setFormData({ nom: "", email: "", role: "Membre" });
-  };
+const openEditModal = (membre: Membre) => {
+  setEditingMember(membre);
+  setFormData({
+    nom: membre.nom,
+    email: membre.email,
+    role: membre.role,
+    charge: membre.charge,
+  });
+  setIsModalOpen(true);
+};
+const closeModal = () => {
+  setIsModalOpen(false);
+  setEditingMember(null);
+  setFormData({
+    nom: "",
+    email: "",
+    role: "Membre",
+    charge: 0,
+  });
+};
   return (
     <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
       
@@ -128,7 +147,12 @@ export default function AdminMembers({ members, onAddMember, onDeleteMember, onE
                 <select 
                   className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                   value={formData.role}
-                  onChange={(e) => setFormData({...formData, role: e.target.value})}
+                  onChange={(e) =>
+                                  setFormData({
+                                  ...formData,
+                                  role: e.target.value as "Membre" | "Administrateur",
+                      })
+              }
                 >
                   <option value="Membre">Membre</option>
                   <option value="Administrateur">Administrateur</option>
