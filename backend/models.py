@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from database import Base
+from sqlalchemy.orm import relationship
 
 
 class Membre(Base):
@@ -15,12 +16,13 @@ class Activite(Base):
     __tablename__ = "activites"
 
     id = Column(Integer, primary_key=True, index=True)
-    type = Column(String(50))
-    description = Column(String(255))
-    dateCreation = Column(String(20))
-    dateEcheance = Column(String(20))
-    statut = Column(String(50))
-
+    type = Column(String(50), nullable=False)
+    description = Column(String(255), nullable=False)
+    dateCreation = Column(String(20), nullable=False)
+    dateEcheance = Column(String(20), nullable=False)
+    statut = Column(String(50), nullable=False)
+    assigne = Column(String(100), nullable=True)      # facultatif
+    doctorant = Column(String(100), nullable=True)    # facultatif
 
 class Affectation(Base):
     __tablename__ = "affectations"
@@ -29,3 +31,5 @@ class Affectation(Base):
     membre_id = Column(Integer, ForeignKey("membres.id"), nullable=False)
     activite_id = Column(Integer, ForeignKey("activites.id"), nullable=False)
     dateAffectation = Column(String(20))
+    membre = relationship("Membre")
+    activite = relationship("Activite")

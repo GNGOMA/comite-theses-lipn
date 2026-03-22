@@ -30,6 +30,17 @@ class ActiviteCreate(BaseModel):
     dateCreation: str
     dateEcheance: str
     statut: str
+    assigne: Optional[str] = None      # facultatif
+    doctorant: Optional[str] = None    # facultatif
+
+class ActiviteUpdate(BaseModel):
+    type: Optional[str] = None
+    description: Optional[str] = None
+    dateCreation: Optional[str] = None
+    dateEcheance: Optional[str] = None
+    statut: Optional[str] = None
+    assigne: Optional[str] = None
+    doctorant: Optional[str] = None
 
 #-----------------Routes Membres-------------------
 @router.get("/membres")
@@ -154,3 +165,43 @@ def get_member_metrics(db: Session = Depends(get_db)):
         })
 
     return resultats
+
+
+@router.post("/activites")
+def create_activite(activite: ActiviteCreate, db: Session = Depends(get_db)):
+    new_activite = Activite(
+        type=activite.type,
+        description=activite.description,
+        dateCreation=activite.dateCreation,
+        dateEcheance=activite.dateEcheance,
+        statut=activite.statut,
+        assigne=activite.assigne,
+        doctorant=activite.doctorant
+    )
+    db.add(new_activite)
+    db.commit()
+    db.refresh(new_activite)
+    return new_activite
+
+@router.delete("/activites/{id}")
+def delete_activite(id: int, db: Session = Depends(get_db)):
+    activite = db.query(Activite).filter(Activite.id == id).first()
+    if activite:
+        db.delete(activite)
+        db.commit()
+        return {"message": "Activité supprimée"}
+    return {"error": "Activité non trouvée"}
+
+@router.put("/activites/{id}")
+def update_activite(id: int, activite: ActiviteUpdate, db: Session = Depends(get_db)):
+    db_activite = db.query(Activite).filter(Activite.id == id).first()
+    if not db_activite:
+        return {"error": "Activité non trouvée"}
+
+    # Mettre à jour seulement les champs fournis
+    for field, value in activite.dict(exclude_unset=True).items():
+        setattr(db_activite, field, value)
+
+    db.commit()
+    db.refresh(db_activite)
+    return db_activite
