@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import LoginPage from "./pages/LoginPage";
 import Layout from "./pages/Layout";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -51,6 +51,25 @@ export default function App() {
     ));
   };
 
+  const handleEditMember = async (updatedMember: Membre) => {
+    try {
+      const response = await fetch(`${API_URL}/membres/${updatedMember.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nom: updatedMember.nom,
+          email: updatedMember.email,
+          role: updatedMember.role
+        }),
+      });
+      if (response.ok) fetchMembers();
+    } catch (error) {
+      console.error("Erreur modification membre:", error);
+    }
+  };
+
+  // --- RENDU DE L'INTERFACE ---
+
   if (page === "login") return <LoginPage onLogin={handleLogin} />;
 
   return (
@@ -58,6 +77,7 @@ export default function App() {
       
       {page === "admin-dash" && <AdminDashboard members={members} />}
 
+      {/* Gestion des Membres */}
       {page === "admin-members" && (
         <AdminMembers
           members={members}
@@ -69,6 +89,7 @@ export default function App() {
 
       {page === "admin-activities" && <AdminActivities activities={[]} />}
 
+      {/* Dashboard Membre */}
       {page === "member-dash" && (
         <MemberDashboard
           onSelect={(activity) => {
@@ -78,13 +99,13 @@ export default function App() {
         />
       )}
 
+      {/* Détails d'une activité */}
       {page === "activity-detail" && (
         <ActivityDetailPage
           activity={selectedActivity}
           onBack={() => setPage("member-dash")}
         />
       )}
-
     </Layout>
   );
 }
