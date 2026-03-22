@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import LoginPage from "./pages/LoginPage";
 import Layout from "./pages/Layout";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -8,22 +8,49 @@ import MemberDashboard from "./pages/MemberDashboard";
 import ActivityDetailPage from "./pages/ActivityDetailPage";
 import type { Membre, Activite } from "./types";
 
-const INITIAL_MEMBERS: Membre[] = [
-  { id: "1", nom: "Loubna MANGOUCHI", email: "L.mangouchi@gmail.com", role: "Membre" },
-  { id: "2", nom: "Omayma Gnoug", email: "O.gnoug@gmail.com", role: "Administrateur" },
-  { id: "3", nom: "Kaouthar BOUROUIS", email: "K.bourouis@gmail.com", role: "Membre" },
-];
-
-const MOCK_ACTIVITIES: Activite[] = [
-  { id: 1, type: "CSI", description: "CSI de Alice Martin", dateCreation: "2024-04-01", dateEcheance: "2024-06-15", statut: "En cours", assigne: "Jean Dupont", doctorant: "Alice Martin" },
-];
+// L'URL de ton backend FastAPI
+const API_URL = "http://127.0.0.1:8000";
 
 export default function App() {
   const [page, setPage] = useState("login");
   const [role, setRole] = useState<"admin" | "member" | null>(null);
   
-  // État pour gérer la liste des membres dynamiquement
-  const [members, setMembers] = useState<Membre[]>(INITIAL_MEMBERS);
+  // États pour les données venant de la BDD
+  const [members, setMembers] = useState<Membre[]>([]);
+  const [activities, setActivities] = useState<Activite[]>([]);
+
+  // --- 1. CHARGEMENT DES DONNÉES ---
+  
+  const fetchMembers = async () => {
+    try {
+      const response = await fetch(`${API_URL}/membres`);
+      if (response.ok) {
+        const data = await response.json();
+        setMembers(data);
+      }
+    } catch (error) {
+      console.error("Erreur chargement membres:", error);
+    }
+  };
+
+  const fetchActivities = async () => {
+    try {
+      const response = await fetch(`${API_URL}/activites`);
+      if (response.ok) {
+        const data = await response.json();
+        setActivities(data);
+      }
+    } catch (error) {
+      console.error("Erreur chargement activités:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchMembers();
+    fetchActivities();
+  }, []);
+
+  // --- 2. LOGIQUE AUTHENTIFICATION ---
 
   const handleLogin = (selectedRole: "admin" | "member") => {
     setRole(selectedRole);
@@ -35,52 +62,87 @@ export default function App() {
     setPage("login");
   };
 
-  // Logique pour ajouter un membre
-  const handleAddMember = (newMemberData: Omit<Membre, "id">) => {
-    const newMember: Membre = {
-      ...newMemberData,
-      id: Math.random().toString(36).substr(2, 9), 
-    };
-    setMembers([...members, newMember]);
-  };
-  // Logique pour supprimer un membre
-  const handleDeleteMember = (id: string) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce membre ?")) {
-      setMembers(members.filter((m) => m.id !== id));
+  // --- 3. ACTIONS MEMBRES (CRUD) ---
+
+  const handleAddMember = async (newMemberData: Omit<Membre, "id">) => {
+    try {
+      const response = await fetch(`${API_URL}/membres`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newMemberData),
+      });
+      if (response.ok) fetchMembers();
+    } catch (error) {
+      console.error("Erreur ajout membre:", error);
     }
   };
-  // Logique pour modifier un membre
-  const handleEditMember = (updatedMember: Membre) => {
-    setMembers(members.map(m => m.id === updatedMember.id ? updatedMember : m));
+
+  const handleDeleteMember = async (id: string | number) => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce membre ?")) {
+      try {
+        const response = await fetch(`${API_URL}/membres/${id}`, {
+          method: "DELETE",
+        });
+        if (response.ok) fetchMembers();
+      } catch (error) {
+        console.error("Erreur suppression membre:", error);
+      }
+    }
   };
+
+  const handleEditMember = async (updatedMember: Membre) => {
+    try {
+      const response = await fetch(`${API_URL}/membres/${updatedMember.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nom: updatedMember.nom,
+          email: updatedMember.email,
+          role: updatedMember.role
+        }),
+      });
+      if (response.ok) fetchMembers();
+    } catch (error) {
+      console.error("Erreur modification membre:", error);
+    }
+  };
+
+  // --- RENDU DE L'INTERFACE ---
 
   if (page === "login") return <LoginPage onLogin={handleLogin} />;
 
   return (
     <Layout role={role} currentPage={page} navigate={setPage} onLogout={handleLogout}>
+      
+      {/* Dashboard Admin : Stats basées sur les données réelles */}
       {page === "admin-dash" && <AdminDashboard members={members} />}
 
+      {/* Gestion des Membres */}
       {page === "admin-members" && (
         <AdminMembers 
           members={members} 
           onAddMember={handleAddMember}
-          onDeleteMember={handleDeleteMember} // <-- Nouvelle prop 
-          onEditMember={handleEditMember} // <-- Nouvelle prop
+          onDeleteMember={handleDeleteMember}
+          onEditMember={handleEditMember}
         />
       )}
 
-      {page === "admin-activities" && <AdminActivities activities={MOCK_ACTIVITIES} />}
+      {/* Liste des activités (Admin) */}
+      {page === "admin-activities" && <AdminActivities activities={activities} />}
 
+      {/* Dashboard Membre */}
       {page === "member-dash" && (
         <MemberDashboard
-          activities={MOCK_ACTIVITIES}
+          activities={activities}
           onSelect={() => setPage("activity-detail")}
         />
       )}
 
+      {/* Détails d'une activité */}
       {page === "activity-detail" && (
         <ActivityDetailPage onBack={() => setPage("member-dash")} />
       )}
+      
     </Layout>
   );
 }

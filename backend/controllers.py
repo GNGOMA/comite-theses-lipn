@@ -36,7 +36,36 @@ class ActiviteCreate(BaseModel):
 def get_membres(db: Session = Depends(get_db)):
     return db.query(Membre).all()
 
+#Loubna
+# --- AJOUTER UN MEMBRE ---
+@router.post("/membres")
+def create_membre(membre: MembreCreate, db: Session = Depends(get_db)):
+    db_membre = Membre(nom=membre.nom, email=membre.email, role=membre.role)
+    db.add(db_membre)
+    db.commit()
+    db.refresh(db_membre)
+    return db_membre
 
+# --- SUPPRIMER UN MEMBRE ---
+@router.delete("/membres/{membre_id}")
+def delete_membre(membre_id: int, db: Session = Depends(get_db)):
+    db_membre = db.query(Membre).filter(Membre.id == membre_id).first()
+    if db_membre:
+        db.delete(db_membre)
+        db.commit()
+    return {"message": "Membre supprimé"}
+
+# --- MODIFIER UN MEMBRE ---
+@router.put("/membres/{membre_id}")
+def update_membre(membre_id: int, membre_update: MembreCreate, db: Session = Depends(get_db)):
+    db_membre = db.query(Membre).filter(Membre.id == membre_id).first()
+    if db_membre:
+        db_membre.nom = membre_update.nom
+        db_membre.email = membre_update.email
+        db_membre.role = membre_update.role
+        db.commit()
+        db.refresh(db_membre)
+    return db_membre
 #------------------Routes Activites-------------------
 @router.get("/activites")
 def get_activites(db: Session = Depends(get_db)):
