@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, ForeignKey
 from database import Base
+
 
 class Membre(Base):
     __tablename__ = "membres"
@@ -19,3 +20,12 @@ class Activite(Base):
     dateCreation = Column(String(20))
     dateEcheance = Column(String(20))
     statut = Column(String(50))
+
+
+class Affectation(Base):
+    __tablename__ = "affectations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    membre_id = Column(Integer, ForeignKey("membres.id"), nullable=False)
+    activite_id = Column(Integer, ForeignKey("activites.id"), nullable=False)
+    dateAffectation = Column(String(20))
