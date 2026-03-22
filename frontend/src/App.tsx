@@ -9,9 +9,9 @@ import ActivityDetailPage from "./pages/ActivityDetailPage";
 import type { Membre, Activite } from "./types";
 
 const INITIAL_MEMBERS: Membre[] = [
-  { id: "1", nom: "Jean Dupont", email: "j.dupont@lipn.fr", role: "Membre" },
-  { id: "2", nom: "Marie Curie", email: "m.curie@lipn.fr", role: "Administrateur" },
-  { id: "3", nom: "Pierre Rossi", email: "p.rossi@lipn.fr", role: "Membre" },
+  { id: "1", nom: "Loubna MANGOUCHI", email: "L.mangouchi@gmail.com", role: "Membre" },
+  { id: "2", nom: "Omayma Gnoug", email: "O.gnoug@gmail.com", role: "Administrateur" },
+  { id: "3", nom: "Kaouthar BOUROUIS", email: "K.bourouis@gmail.com", role: "Membre" },
 ];
 
 const MOCK_ACTIVITIES: Activite[] = [
@@ -49,6 +49,10 @@ export default function App() {
       setMembers(members.filter((m) => m.id !== id));
     }
   };
+  // Logique pour modifier un membre
+  const handleEditMember = (updatedMember: Membre) => {
+    setMembers(members.map(m => m.id === updatedMember.id ? updatedMember : m));
+  };
 
   if (page === "login") return <LoginPage onLogin={handleLogin} />;
 
@@ -61,6 +65,7 @@ export default function App() {
           members={members} 
           onAddMember={handleAddMember}
           onDeleteMember={handleDeleteMember} // <-- Nouvelle prop 
+          onEditMember={handleEditMember} // <-- Nouvelle prop
         />
       )}
 

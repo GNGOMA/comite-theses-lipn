@@ -6,19 +6,35 @@ interface Props {
   members: Membre[];
   onAddMember: (newMember: Omit<Membre, "id">) => void;
   onDeleteMember: (id: string) => void; // <-- Ajout ici
+  onEditMember: (member: Membre) => void; // <-- Ajout ici
 }
 
-export default function AdminMembers({ members, onAddMember, onDeleteMember }: Props) {
+export default function AdminMembers({ members, onAddMember, onDeleteMember, onEditMember }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<Membre | null>(null); // Pour savoir si on édite
   const [formData, setFormData] = useState({ nom: "", email: "", role: "Membre" });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onAddMember(formData);
-    setIsModalOpen(false);
-    setFormData({ nom: "", email: "", role: "Membre" }); // Réinitialisation
+    if (editingMember) {
+      // Si on est en train d'éditer
+      onEditMember({ ...editingMember, ...formData });
+    } else {
+      // Sinon on ajoute
+      onAddMember(formData);
+    }
+    closeModal();
   };
-
+  const openEditModal = (membre: Membre) => {
+    setEditingMember(membre);
+    setFormData({ nom: membre.nom, email: membre.email, role: membre.role });
+    setIsModalOpen(true);
+  };
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingMember(null);
+    setFormData({ nom: "", email: "", role: "Membre" });
+  };
   return (
     <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
       
@@ -58,8 +74,11 @@ export default function AdminMembers({ members, onAddMember, onDeleteMember }: P
                 </span>
               </td>
               <td className="px-6 py-4 text-right">
-                <button className="p-2 text-slate-400 hover:text-indigo-600"><Edit size={18} /></button>
-              <button 
+                <button 
+                  onClick={() => openEditModal(membre)}
+                  className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
+                  <Edit size={18} />
+                </button>              <button 
                 onClick={() => onDeleteMember(membre.id)}
                 className="p-2 text-slate-400 hover:text-red-500 transition-colors">
                 <Trash2 size={18} />
@@ -72,20 +91,23 @@ export default function AdminMembers({ members, onAddMember, onDeleteMember }: P
       {/* Modale d'ajout */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="p-6 border-b border-slate-50 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-slate-800">Ajouter un membre</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <h3 className="text-lg font-bold text-slate-800">
+                {editingMember ? "Modifier le membre" : "Ajouter un membre"}
+              </h3>
+              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600">
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              {/* Les inputs restent les mêmes car ils utilisent formData */}
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Nom Complet</label>
                 <input 
                   required
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  className="..." 
                   type="text" 
                   value={formData.nom}
                   onChange={(e) => setFormData({...formData, nom: e.target.value})}
@@ -113,11 +135,11 @@ export default function AdminMembers({ members, onAddMember, onDeleteMember }: P
                 </select>
               </div>
               <div className="pt-4 flex gap-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-colors">
+                <button type="button" onClick={closeModal} className="...">
                   Annuler
                 </button>
-                <button type="submit" className="flex-1 bg-indigo-600 text-white px-4 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-colors">
-                  Enregistrer
+                <button type="submit" className="flex-1 bg-indigo-600 text-white px-4 py-2.5 rounded-xl font-bold">
+                  {editingMember ? "Mettre à jour" : "Enregistrer"}
                 </button>
               </div>
             </form>
