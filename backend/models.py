@@ -9,6 +9,7 @@ class Membre(Base):
     nom = Column(String(100))
     email = Column(String(100))
     role = Column(String(50))
+    mot_de_passe = Column(String(255)) 
 
 
 class Activite(Base):

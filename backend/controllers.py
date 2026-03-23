@@ -1,23 +1,15 @@
 from typing import Optional
-
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+import os
+import shutil
+import bcrypt # <-- NOUVEL IMPORT POUR LE CRYPTAGE
 
 from database import SessionLocal
 from models import Membre, Activite, Affectation
 
-from fastapi import HTTPException
-from pydantic import BaseModel
-
-from fastapi import UploadFile, File
-import os
-import shutil
-
 router = APIRouter()
-
-class StatutUpdate(BaseModel):
-    statut: str
 
 def get_db():
     db = SessionLocal()
@@ -26,12 +18,17 @@ def get_db():
     finally:
         db.close()
 
+# ==========================================
+# 1. SCHÉMAS PYDANTIC (Modèles de requêtes)
+# ==========================================
+
+class StatutUpdate(BaseModel):
+    statut: str
 
 class MembreCreate(BaseModel):
     nom: str
     email: str
     role: str
-
 
 class ActiviteCreate(BaseModel):
     type: str
@@ -40,11 +37,86 @@ class ActiviteCreate(BaseModel):
     dateEcheance: str
     statut: str
 
+# --- Schémas pour l'authentification ---
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+    role: str
+
+class RegisterRequest(BaseModel):
+    nom: str
+    email: str
+    password: str
+    role: str
+
+# ==========================================
+# 2. FONCTIONS DE SÉCURITÉ (Mots de passe)
+# ==========================================
+
+def get_password_hash(password: str) -> str:
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+
+# ==========================================
+# 3. ROUTES D'AUTHENTIFICATION (Nouveau)
+# ==========================================
+
+@router.post("/api/register")
+def register(request: RegisterRequest, db: Session = Depends(get_db)):
+    # Vérifier si l'email existe déjà
+    user_exists = db.query(Membre).filter(Membre.email == request.email).first()
+    if user_exists:
+        raise HTTPException(status_code=400, detail="Cet email est déjà utilisé.")
+        
+    # Créer le nouvel utilisateur
+    nouveau_membre = Membre(
+        nom=request.nom,
+        email=request.email,
+        mot_de_passe=get_password_hash(request.password), # Cryptage du mot de passe
+        role=request.role
+    )
+    
+    db.add(nouveau_membre)
+    db.commit()
+    return {"message": "Compte créé avec succès !"}
+
+
+@router.post("/api/login")
+def login(request: LoginRequest, db: Session = Depends(get_db)):
+    # Recherche l'utilisateur par son email
+    user = db.query(Membre).filter(Membre.email == request.email).first()
+    
+    # Si l'email n'existe pas ou mot de passe incorrect
+    if not user or not verify_password(request.password, user.mot_de_passe):
+        raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect.")
+        
+    # Vérification du rôle
+    if user.role != request.role:
+        raise HTTPException(status_code=403, detail=f"Accès refusé. Vous n'êtes pas {request.role}.")
+        
+    # Succès !
+    return {
+        "access_token": "token_temporaire_ok",
+        "user": {
+            "id": user.id,
+            "nom": user.nom,
+            "email": user.email,
+            "role": user.role
+        }
+    }
+
+
+# ==========================================
+# 4. VOS ROUTES EXISTANTES
+# ==========================================
+
 #-----------------Routes Membres-------------------
 @router.get("/membres")
 def get_membres(db: Session = Depends(get_db)):
     return db.query(Membre).all()
-
 
 #------------------Routes Activites-------------------
 @router.get("/activites")
@@ -108,7 +180,6 @@ def get_affectations(db: Session = Depends(get_db)):
 
     return result
 
-
 #-------------------Routes Administrateur---------------
 
 @router.get("/dashboard/stats")
@@ -128,7 +199,6 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
 @router.get("/dashboard/member-metrics")
 def get_member_metrics(db: Session = Depends(get_db)):
     membres = db.query(Membre).all()
-
     total_tasks_global = db.query(Affectation).count()
 
     total_completed_global = (
@@ -237,4 +307,3 @@ def upload_fichier_activite(activite_id: int, fichier: UploadFile = File(...), d
         "path": file_path,
         "activite_id": activite_id
     }
-
