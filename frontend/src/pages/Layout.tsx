@@ -7,14 +7,17 @@ import {
   FileText,
   Bell,
   Edit,
+  Shield,
 } from "lucide-react";
 
+// Interface mise à jour pour inclure userName
 interface LayoutProps {
   role: "admin" | "member" | null;
   currentPage: string;
   navigate: (page: string) => void;
   onLogout: () => void;
   children: React.ReactNode;
+  userName?: string; // Ajout de la prop userName
 }
 
 interface SidebarProps {
@@ -122,8 +125,19 @@ export default function Layout({
   navigate,
   onLogout,
   children,
+  userName, // Récupération de userName
 }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Fonction pour extraire les initiales dynamiquement
+  const getInitials = (name?: string) => {
+    if (!name) return "JD";
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
@@ -167,8 +181,20 @@ export default function Layout({
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
             </button>
 
-            <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg shadow-indigo-100">
-              JD
+            {/* Affichage dynamique du nom et du rôle */}
+            <div className="flex items-center gap-3 text-right hidden sm:flex">
+              <div>
+                <p className="text-sm font-black text-slate-900 leading-none mb-1">{userName || "Utilisateur"}</p>
+                <div className="flex items-center gap-1 justify-end text-indigo-500 font-black text-[9px] uppercase tracking-widest">
+                  <Shield size={10} />
+                  <span>{role}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Avatar avec initiales dynamiques */}
+            <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg shadow-indigo-100 uppercase">
+              {getInitials(userName)}
             </div>
           </div>
         </header>

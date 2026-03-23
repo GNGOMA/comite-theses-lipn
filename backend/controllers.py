@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import os
 import shutil
-import bcrypt # <-- NOUVEL IMPORT POUR LE CRYPTAGE
+import bcrypt
 
 from database import SessionLocal
 from models import Membre, Activite, Affectation
@@ -61,7 +61,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 # ==========================================
-# 3. ROUTES D'AUTHENTIFICATION (Nouveau)
+# 3. ROUTES D'AUTHENTIFICATION
 # ==========================================
 
 @router.post("/api/register")
@@ -110,20 +110,51 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
 
 
 # ==========================================
-# 4. VOS ROUTES EXISTANTES
+# 4. ROUTES MEMBRES
 # ==========================================
 
-#-----------------Routes Membres-------------------
 @router.get("/membres")
 def get_membres(db: Session = Depends(get_db)):
     return db.query(Membre).all()
 
-#------------------Routes Activites-------------------
+# --- AJOUTER UN MEMBRE (Loubna) ---
+@router.post("/membres")
+def create_membre(membre: MembreCreate, db: Session = Depends(get_db)):
+    db_membre = Membre(nom=membre.nom, email=membre.email, role=membre.role)
+    db.add(db_membre)
+    db.commit()
+    db.refresh(db_membre)
+    return db_membre
+
+# --- SUPPRIMER UN MEMBRE (Loubna) ---
+@router.delete("/membres/{membre_id}")
+def delete_membre(membre_id: int, db: Session = Depends(get_db)):
+    db_membre = db.query(Membre).filter(Membre.id == membre_id).first()
+    if db_membre:
+        db.delete(db_membre)
+        db.commit()
+    return {"message": "Membre supprimé"}
+
+# --- MODIFIER UN MEMBRE (Loubna) ---
+@router.put("/membres/{membre_id}")
+def update_membre(membre_id: int, membre_update: MembreCreate, db: Session = Depends(get_db)):
+    db_membre = db.query(Membre).filter(Membre.id == membre_id).first()
+    if db_membre:
+        db_membre.nom = membre_update.nom
+        db_membre.email = membre_update.email
+        db_membre.role = membre_update.role
+        db.commit()
+        db.refresh(db_membre)
+    return db_membre
+
+# ==========================================
+# 5. ROUTES ACTIVITES & AFFECTATIONS
+# ==========================================
+
 @router.get("/activites")
 def get_activites(db: Session = Depends(get_db)):
     return db.query(Activite).all()
 
-#----------------------------------- Routes Membres + Activites-------------------
 @router.get("/membres/{membre_id}/activites")
 def get_activites_by_membre(membre_id: int, db: Session = Depends(get_db)):
     results = (
@@ -147,11 +178,6 @@ def get_activites_by_membre(membre_id: int, db: Session = Depends(get_db)):
         })
 
     return data
-
-#-------------------------------
-# =======================
-# Routes Affectations
-# =======================
 
 @router.get("/affectations")
 def get_affectations(db: Session = Depends(get_db)):
@@ -180,7 +206,9 @@ def get_affectations(db: Session = Depends(get_db)):
 
     return result
 
-#-------------------Routes Administrateur---------------
+# ==========================================
+# 6. ROUTES DASHBOARD (STATISTIQUES)
+# ==========================================
 
 @router.get("/dashboard/stats")
 def get_dashboard_stats(db: Session = Depends(get_db)):
@@ -259,7 +287,9 @@ def get_member_metrics(db: Session = Depends(get_db)):
 
     return resultats
 
-#-------------------Route pour mettre à jour le statut d'une activité-------------------
+# ==========================================
+# 7. ROUTES MISES À JOUR & UPLOADS
+# ==========================================
 
 @router.put("/activites/{activite_id}/statut")
 def update_statut_activite(activite_id: int, payload: StatutUpdate, db: Session = Depends(get_db)):
@@ -283,8 +313,6 @@ def update_statut_activite(activite_id: int, payload: StatutUpdate, db: Session 
             "statut": activite.statut
         }
     }
-
-#-------------------Route pour uploader un fichier lié à une activité-------------------
 
 @router.post("/activites/{activite_id}/upload")
 def upload_fichier_activite(activite_id: int, fichier: UploadFile = File(...), db: Session = Depends(get_db)):
